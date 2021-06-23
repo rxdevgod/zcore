@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"zdb/zcache"
+	"github.com/rxdevgod/zcache"
 )
 
 func main() {
