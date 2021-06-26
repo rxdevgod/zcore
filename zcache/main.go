@@ -70,44 +70,44 @@ func new(config map[string]interface{}) ConcurrentMap {
 	}
 
 	// Load persistent data
-	go func() {
-		var wg sync.WaitGroup
-		for i := 0; i < gShardCount; i++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, i int) {
-				defer wg.Done()
-				shard := m[i]
-				shard.Lock()
-				dat, _ := ioutil.ReadFile(gShardPath + strconv.Itoa(i))
-				sdat := bytes.Split(dat, []byte{'\n'})
-				for _, l := range sdat {
-					key, value, found := parseKeyValueFromString(string(l))
-					if found {
-						shard.items[key] = value
-					}
-				}
-				shard.Unlock()
-
-			}(&wg, i)
-		}
-		wg.Wait()
-
-		// Periodic save persistent data
-		ticker := time.NewTicker(gShardLogInterval * time.Millisecond)
-		go func() {
-			for range ticker.C {
-				for i := 0; i < gShardCount; i++ {
-					shard := m[i]
-					shard.file, _ = os.OpenFile(gShardPath+strconv.Itoa(i), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-					shard.Lock()
-					shard.file.WriteString(shard.buffer.String())
-					shard.buffer.Reset()
-					shard.Unlock()
-					shard.file.Close()
+	// go func() {
+	var wg sync.WaitGroup
+	for i := 0; i < gShardCount; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, i int) {
+			defer wg.Done()
+			shard := m[i]
+			shard.Lock()
+			dat, _ := ioutil.ReadFile(gShardPath + strconv.Itoa(i))
+			sdat := bytes.Split(dat, []byte{'\n'})
+			for _, l := range sdat {
+				key, value, found := parseKeyValueFromString(string(l))
+				if found {
+					shard.items[key] = value
 				}
 			}
-		}()
+			shard.Unlock()
+
+		}(&wg, i)
+	}
+	wg.Wait()
+
+	// Periodic save persistent data
+	ticker := time.NewTicker(gShardLogInterval * time.Millisecond)
+	go func() {
+		for range ticker.C {
+			for i := 0; i < gShardCount; i++ {
+				shard := m[i]
+				shard.file, _ = os.OpenFile(gShardPath+strconv.Itoa(i), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+				shard.Lock()
+				shard.file.WriteString(shard.buffer.String())
+				shard.buffer.Reset()
+				shard.Unlock()
+				shard.file.Close()
+			}
+		}
 	}()
+	// }()
 
 	return m
 }

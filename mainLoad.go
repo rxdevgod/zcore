@@ -12,7 +12,9 @@ import (
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	startTimeSet := time.Now().UnixNano()
-	m := zcache.New()
+	m := zcache.NewWithConfig(map[string]interface{}{
+		"dbpath": "db/abc",
+	})
 
 	curTimeSet := time.Now().UnixNano()
 	deltaTime := (curTimeSet - startTimeSet) / 1000000000
